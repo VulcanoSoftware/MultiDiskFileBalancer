@@ -610,6 +610,10 @@ def _cleanup_managed_nfs_exports():
 
     if shutil.which("exportfs"):
         try:
+            _run_capture(_sudo_prefix() + ["exportfs", "-ua"], timeout=60)
+        except Exception:
+            pass
+        try:
             _run_capture(_sudo_prefix() + ["exportfs", "-ra"], timeout=60)
         except Exception:
             pass
@@ -2171,10 +2175,15 @@ def register_fuse_cleanup_handlers(mount_point, webhook_url, remove_dir_if_empty
                 except Exception:
                     pass
         cleanup_fuse_mount()
+        try:
+            _cleanup_managed_nfs_exports()
+        except Exception:
+            pass
         _stop_all_managed_containers()
         os._exit(0)
 
     atexit.register(cleanup_fuse_mount)
+    atexit.register(_cleanup_managed_nfs_exports)
     atexit.register(_stop_all_managed_containers)
     for signal_name in ('SIGINT', 'SIGTERM'):
         sig = getattr(signal, signal_name, None)
