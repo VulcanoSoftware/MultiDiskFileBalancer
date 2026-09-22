@@ -2255,6 +2255,7 @@ def save_config_if_missing(config_data, config_path=config_path):
     space_hunter_dry_run = bool(settings.get('space_hunter_dry_run', False))
     space_hunter_max_actions_per_cycle = _normalize_positive_int(settings.get('space_hunter_max_actions_per_cycle'))
     space_hunter_global_fallback = bool(settings.get('space_hunter_global_fallback', False))
+    auto_cleanup_on_move = _coerce_bool(settings.get('auto_cleanup_on_move', True), True)
     if not isinstance(space_hunter_exclude_folders, list):
         space_hunter_exclude_folders = []
 
@@ -2373,6 +2374,7 @@ def save_config_if_missing(config_data, config_path=config_path):
     lines.append(f"  space_hunter_dry_run: {_bool_to_yaml(space_hunter_dry_run)}")
     lines.append(f"  space_hunter_max_actions_per_cycle: {space_hunter_max_actions_per_cycle or 0}")
     lines.append(f"  space_hunter_global_fallback: {_bool_to_yaml(space_hunter_global_fallback)}")
+    lines.append(f"  auto_cleanup_on_move: {_bool_to_yaml(auto_cleanup_on_move)}")
     lines.append("")
     lines.append("space_hunter_disks:")
     lines.extend(space_hunter_lines)
@@ -2550,6 +2552,7 @@ def _normalize_config_for_runtime(cfg):
     normalized_settings = dict(settings)
     normalized_settings['backup_strategy'] = _normalize_backup_strategy(normalized_settings.get('backup_strategy'))
     normalized_settings['raid_simulation'] = _normalize_raid_simulation(normalized_settings.get('raid_simulation'))
+    normalized_settings['auto_cleanup_on_move'] = _coerce_bool(normalized_settings.get('auto_cleanup_on_move', True), True)
     out['settings'] = normalized_settings
 
     src_folders = out.get('src_folders')
@@ -2633,6 +2636,7 @@ def _validate_config_for_save(cfg):
     settings['space_hunter_dry_run'] = _coerce_bool(settings.get('space_hunter_dry_run', False), False)
     max_actions = settings.get('space_hunter_max_actions_per_cycle', 0)
     settings['space_hunter_max_actions_per_cycle'] = _coerce_int(max_actions, default=0, min_value=0)
+    settings['auto_cleanup_on_move'] = _coerce_bool(settings.get('auto_cleanup_on_move', True), True)
 
     src_folders = cfg.get('src_folders')
     if isinstance(src_folders, list) and src_folders:
@@ -3442,8 +3446,40 @@ def check_files_and_move(src, disks, last_disk, webhook_url, min_file_age_hours,
             print_and_discord(f"No available disks for {rel_path}, skipping file.", webhook_url)
             continue
 
+        auto_cleanup_on_move = _coerce_bool(settings_cfg.get("auto_cleanup_on_move", True), True)
+        sh_disks = cfg.get("space_hunter_disks", []) if isinstance(cfg, dict) else []
+
         def _enough_space_for(disk_name, disk_path):
             try:
+                if has_sufficient_free_space(disk_path, required_space):
+                    return True
+                if auto_cleanup_on_move:
+                    print_and_discord(
+                        f"Attempting on-the-fly cleanup on {disk_name} ({disk_path}) to free up {required_space} GB for incoming file...",
+                        webhook_url,
+                    )
+                    sh_ctx = None
+                    if isinstance(sh_disks, list):
+                        for d in sh_disks:
+                            if isinstance(d, dict) and _same_or_child_path(disk_path, d.get("path") or d.get("pad") or ""):
+                                sh_ctx = d
+                                break
+                    sh_action = sh_ctx.get("action", "delete") if sh_ctx else "delete"
+                    sh_move_dest = sh_ctx.get("move_destination") if sh_ctx else None
+                    sh_min_age = sh_ctx.get("min_file_age_hours", settings_cfg.get("space_hunter_min_file_age_hours", min_file_age_hours)) if sh_ctx else settings_cfg.get("space_hunter_min_file_age_hours", min_file_age_hours)
+                    sh_excludes = sh_ctx.get("exclude_folders", settings_cfg.get("space_hunter_exclude_folders", [])) if sh_ctx else settings_cfg.get("space_hunter_exclude_folders", [])
+                    sh_dry_run = bool(sh_ctx.get("dry_run", settings_cfg.get("space_hunter_dry_run", False))) if sh_ctx else bool(settings_cfg.get("space_hunter_dry_run", False))
+
+                    check_free_space(
+                        disk_path=disk_path,
+                        min_free_gb=required_space,
+                        webhook_url=webhook_url,
+                        action=sh_action,
+                        move_destination=sh_move_dest,
+                        min_file_age_hours=sh_min_age,
+                        exclude_folders=sh_excludes,
+                        dry_run=sh_dry_run,
+                    )
                 return has_sufficient_free_space(disk_path, required_space)
             except Exception as exc:
                 print_and_discord(f"Disk check failed for {disk_name} ({disk_path}): {exc}", webhook_url)

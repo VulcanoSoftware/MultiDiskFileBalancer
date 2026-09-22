@@ -262,6 +262,9 @@ settings:
   space_hunter_max_actions_per_cycle: 0
   space_hunter_global_fallback: false
 
+  # On-the-fly cleanup when moving large files (true = clean up space immediately if target disk is full)
+  auto_cleanup_on_move: true
+
 space_hunter_disks:
   - action: delete           # 'delete' or 'move'
     min_free_gb: 40

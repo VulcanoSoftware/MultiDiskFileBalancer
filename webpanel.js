@@ -760,6 +760,7 @@ function fillConfigForm(cfg, meta) {
   setIfPresent("cfg-settings-min_file_age_hours", cfg.settings?.min_file_age_hours ?? 1);
   setIfPresent("cfg-settings-extra_safety_space_gb", cfg.settings?.extra_safety_space_gb ?? 0);
   setIfPresent("cfg-settings-console_clear_interval_hours", cfg.settings?.console_clear_interval_hours ?? 6);
+  setIfPresent("cfg-settings-auto_cleanup_on_move", cfg.settings?.auto_cleanup_on_move ?? true);
   setIfPresent("cfg-settings-space_check_default_min_free_gb", cfg.settings?.space_check_default_min_free_gb ?? 3);
   setIfPresent("cfg-settings-space_hunter_min_file_age_hours", cfg.settings?.space_hunter_min_file_age_hours ?? (cfg.settings?.min_file_age_hours ?? 1));
   setIfPresent("cfg-settings-space_hunter_dry_run", cfg.settings?.space_hunter_dry_run ?? false);
@@ -833,6 +834,7 @@ function collectConfigFromForm() {
   base.settings.min_file_age_hours = readNumber("cfg-settings-min_file_age_hours", 1);
   base.settings.extra_safety_space_gb = readNumber("cfg-settings-extra_safety_space_gb", 0);
   base.settings.console_clear_interval_hours = readNumber("cfg-settings-console_clear_interval_hours", 6);
+  base.settings.auto_cleanup_on_move = readBoolSelect("cfg-settings-auto_cleanup_on_move", true);
   base.settings.space_check_default_min_free_gb = readNumber("cfg-settings-space_check_default_min_free_gb", 3);
   base.settings.space_hunter_min_file_age_hours = readNumber(
     "cfg-settings-space_hunter_min_file_age_hours",
