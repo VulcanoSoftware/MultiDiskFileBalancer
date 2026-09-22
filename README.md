@@ -204,7 +204,7 @@ python multidisk_filebalancer.py
 On some systems:
 
 ```bash
-pip install -r requirements.txt --break-system-packages
+sudo pip install -r requirements.txt --break-system-packages
 sudo python multidisk_filebalancer.py
 ```
 
