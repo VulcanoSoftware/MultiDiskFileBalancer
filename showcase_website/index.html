@@ -3,294 +3,62 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>MultiDisk FileBalancer — Config Generator & Storage Orchestration</title>
+  <title>MultiDisk FileBalancer — Unified Multi-Disk Storage</title>
   <link rel="stylesheet" href="styles.css">
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 </head>
 <body>
 
-  <!-- Navigation -->
-  <header class="navbar">
-    <div class="container nav-container">
-      <div class="brand">
-        <img src="logo.png" alt="MDFB Logo" class="nav-logo" onerror="this.style.display='none'">
-        <span class="brand-name">MultiDisk FileBalancer</span>
-      </div>
-      <nav class="nav-links">
-        <a href="#features">Features</a>
-        <a href="#config-generator">Config Generator</a>
-        <a href="#next-steps">Next Steps</a>
-        <a href="#video">Showcase</a>
-        <a href="https://docs.mdfb.vulcanocraft.com/" target="_blank">Docs</a>
-      </nav>
-    </div>
-  </header>
-
   <!-- Hero -->
   <section class="hero">
     <div class="container">
-      <div class="badge">Linux-only • Production Ready • Free & Open Source</div>
+      <div class="badge">Linux-only • Production Ready</div>
       
       <h1>One unified filesystem.<br>
       <span>Multiple physical disks.</span></h1>
       
       <p class="subtitle">
-        Safe, flexible software-defined storage orchestration without RAID risks.<br>
-        Featuring FUSE, SFTP, WebDAV, NFS and password-protected web management panel.
+        Safe, flexible multi-disk storage without RAID risks.<br>
+        Featuring FUSE, SFTP, WebDAV, NFS and a modern web dashboard.
       </p>
 
       <div class="cta-buttons">
-        <a href="#config-generator" class="btn primary">
-          ⚡ Create Your Config
+        <a href="https://github.com/VulcanoSoftware/MultiDiskFileBalancer" target="_blank" class="btn primary">
+          <i class="fab fa-github"></i> View on GitHub
         </a>
-        <a href="https://github.com/VulcanoSoftware/MultiDiskFileBalancer" target="_blank" class="btn secondary">
-          <i class="fab fa-github"></i> GitHub Repository
+        <a href="https://docs.mdfb.vulcanocraft.com/" target="_blank" class="btn secondary">
+          📖 Full Documentation
         </a>
       </div>
     </div>
   </section>
 
   <!-- Features -->
-  <section id="features" class="features">
+  <section class="features">
     <div class="container">
       <h2>Powerful Features</h2>
       <div class="grid">
         <div class="card">
           <div class="icon">🔄</div>
-          <h3>Smart Distribution</h3>
-          <p>Flexible backup strategies including Round-Robin, Most Free Space, Least Used %, and Path-Hash.</p>
+          <h3>Smart Balancing</h3>
+          <p>Automatic file distribution with round-robin and free space awareness.</p>
         </div>
         <div class="card">
           <div class="icon">🛡️</div>
           <h3>Failure Isolation</h3>
-          <p>One disk fails = only files on that disk are affected. No striping risk or parity locks.</p>
-        </div>
-        <div class="card">
-          <div class="icon">🔐</div>
-          <h3>Password Protected Panel</h3>
-          <p>Secure web panel with authentication and strict 30-minute session management for remote access.</p>
+          <p>One disk fails = only files on that disk are affected. No striping risk.</p>
         </div>
         <div class="card">
           <div class="icon">🌐</div>
           <h3>Multi-Protocol Access</h3>
-          <p>Unified access over FUSE virtual mount, SFTP, WebDAV, NFS, and Docker Filebrowser.</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Interactive Config Generator -->
-  <section id="config-generator" class="generator-section">
-    <div class="container">
-      <div class="section-header">
-        <h2>Visual Config Generator</h2>
-        <p class="section-subtitle">Configure your MultiDisk FileBalancer setup effortlessly. Adjust the settings below to generate your ready-to-use <code>config.yml</code> file.</p>
-      </div>
-
-      <div class="generator-layout">
-        <!-- Form Options -->
-        <div class="generator-form">
-          <!-- Step 1: Input Folders -->
-          <div class="form-group-card">
-            <h3><i class="fas fa-folder-open"></i> 1. Input Folders (src_folders)</h3>
-            <p class="form-hint">Folders monitored for incoming files to distribute across disks.</p>
-            <div id="srcFoldersContainer" class="dynamic-list"></div>
-            <button type="button" class="btn-sm secondary" id="addSrcFolderBtn"><i class="fas fa-plus"></i> Add Input Folder</button>
-          </div>
-
-          <!-- Step 2: Storage Disks -->
-          <div class="form-group-card">
-            <h3><i class="fas fa-hdd"></i> 2. Target Disks</h3>
-            <p class="form-hint">Physical storage disks in your storage pool.</p>
-            <div id="disksContainer" class="dynamic-list"></div>
-            <button type="button" class="btn-sm secondary" id="addDiskBtn"><i class="fas fa-plus"></i> Add Storage Disk</button>
-          </div>
-
-          <!-- Step 3: Strategy & RAID Simulation -->
-          <div class="form-group-card">
-            <h3><i class="fas fa-sliders-h"></i> 3. Balancing & Redundancy</h3>
-            <div class="form-grid">
-              <div class="field">
-                <label for="cfg_backup_strategy">Disk Selection Strategy</label>
-                <select id="cfg_backup_strategy">
-                  <option value="round_robin">round_robin (Cycles through disks)</option>
-                  <option value="most_free_space">most_free_space (Picks disk with most free bytes)</option>
-                  <option value="least_used_pct">least_used_pct (Picks disk with lowest % used)</option>
-                  <option value="path_hash">path_hash (Deterministic hash-based placement)</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="cfg_raid_simulation">RAID Simulation Level</label>
-                <select id="cfg_raid_simulation">
-                  <option value="none">none / raid0 (1 copy, maximum space)</option>
-                  <option value="raid1">raid1 (2 copies mirrored)</option>
-                  <option value="raid5">raid5 (2 copies software raid)</option>
-                  <option value="raid6">raid6 (3 copies software raid)</option>
-                  <option value="raid10">raid10 (2 copies in pair)</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="cfg_min_file_age_hours">Min File Age (Hours)</label>
-                <input type="number" id="cfg_min_file_age_hours" value="4" min="0">
-              </div>
-              <div class="field">
-                <label for="cfg_scan_interval_seconds">Scan Interval (Seconds)</label>
-                <input type="number" id="cfg_scan_interval_seconds" value="120" min="1">
-              </div>
-            </div>
-          </div>
-
-          <!-- Step 4: Web Management Panel & Security -->
-          <div class="form-group-card">
-            <h3><i class="fas fa-user-shield"></i> 4. Web Panel & Authentication</h3>
-            <div class="form-grid">
-              <div class="field">
-                <label for="cfg_webpanel_enabled">Webpanel Enabled</label>
-                <select id="cfg_webpanel_enabled">
-                  <option value="true">true</option>
-                  <option value="false">false</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="cfg_webpanel_port">Webpanel Port</label>
-                <input type="number" id="cfg_webpanel_port" value="5000" min="1" max="65535">
-              </div>
-              <div class="field">
-                <label for="cfg_webpanel_username">Webpanel Username</label>
-                <input type="text" id="cfg_webpanel_username" value="admin" placeholder="admin">
-              </div>
-              <div class="field">
-                <label for="cfg_webpanel_password">Webpanel Password</label>
-                <input type="text" id="cfg_webpanel_password" value="changeme" placeholder="Password">
-              </div>
-            </div>
-          </div>
-
-          <!-- Step 5: Network Access Services -->
-          <div class="form-group-card">
-            <h3><i class="fas fa-network-wired"></i> 5. Network Protocol Services</h3>
-            <div class="form-grid">
-              <div class="field">
-                <label for="cfg_webdav_enabled">WebDAV Enabled</label>
-                <select id="cfg_webdav_enabled">
-                  <option value="true">true</option>
-                  <option value="false">false</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="cfg_webdav_port">WebDAV Port</label>
-                <input type="number" id="cfg_webdav_port" value="8080" min="1" max="65535">
-              </div>
-              <div class="field">
-                <label for="cfg_sftp_enabled">SFTP Enabled</label>
-                <select id="cfg_sftp_enabled">
-                  <option value="true">true</option>
-                  <option value="false">false</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="cfg_sftp_port">SFTP Port</label>
-                <input type="number" id="cfg_sftp_port" value="8081" min="1" max="65535">
-              </div>
-              <div class="field">
-                <label for="cfg_fuse_enabled">FUSE Virtual Mount</label>
-                <select id="cfg_fuse_enabled">
-                  <option value="true">true</option>
-                  <option value="false">false</option>
-                </select>
-              </div>
-              <div class="field">
-                <label for="cfg_fuse_mount_point">FUSE Mount Point Path</label>
-                <input type="text" id="cfg_fuse_mount_point" value="/home/user/Desktop/mount">
-              </div>
-            </div>
-          </div>
-
-          <!-- Step 6: Space Hunter Cleanup -->
-          <div class="form-group-card">
-            <h3><i class="fas fa-broom"></i> 6. Space Hunter Automatic Cleanup</h3>
-            <div class="form-grid">
-              <div class="field">
-                <label for="cfg_space_check_default_min_free_gb">Min Free Space Threshold (GB)</label>
-                <input type="number" id="cfg_space_check_default_min_free_gb" value="40" min="0">
-              </div>
-              <div class="field">
-                <label for="cfg_auto_cleanup_on_move">Auto Cleanup on Move</label>
-                <select id="cfg_auto_cleanup_on_move">
-                  <option value="true">true</option>
-                  <option value="false">false</option>
-                </select>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        <!-- Output Preview -->
-        <div class="generator-preview">
-          <div class="preview-card">
-            <div class="preview-header">
-              <span class="preview-title"><i class="fas fa-file-code"></i> Generated config.yml</span>
-              <div class="preview-actions">
-                <button type="button" class="btn-sm primary" id="copyConfigBtn"><i class="fas fa-copy"></i> Copy</button>
-                <button type="button" class="btn-sm secondary" id="downloadConfigBtn"><i class="fas fa-download"></i> Download</button>
-              </div>
-            </div>
-            <pre class="yaml-output" id="yamlOutput"></pre>
-            <div class="copy-status" id="copyStatus"></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Next Steps Guide -->
-  <section id="next-steps" class="next-steps-section">
-    <div class="container">
-      <div class="section-header">
-        <h2><i class="fas fa-route"></i> Next Steps — How to Run Your Setup</h2>
-        <p class="section-subtitle">Follow these quick steps to launch MultiDisk FileBalancer with your newly generated config.</p>
-      </div>
-
-      <div class="steps-grid">
-        <div class="step-card">
-          <div class="step-number">1</div>
-          <h3>Save Configuration</h3>
-          <p>Place your generated <code>config.yml</code> file into the root folder of MultiDisk FileBalancer.</p>
-        </div>
-
-        <div class="step-card">
-          <div class="step-number">2</div>
-          <h3>Install Dependencies</h3>
-          <p>Run the installation command in your Linux terminal:</p>
-          <div class="code-box">
-            <code>pip install -r requirements.txt</code>
-          </div>
-        </div>
-
-        <div class="step-card">
-          <div class="step-number">3</div>
-          <h3>Launch Application</h3>
-          <p>Start MultiDisk FileBalancer with sudo privileges for FUSE/NFS support:</p>
-          <div class="code-box">
-            <code>sudo python multidisk_filebalancer.py</code>
-          </div>
-        </div>
-
-        <div class="step-card">
-          <div class="step-number">4</div>
-          <h3>Access Web Panel</h3>
-          <p>Open your browser and navigate to your web panel:</p>
-          <div class="code-box">
-            <code>http://&lt;your-server-ip&gt;:5000</code>
-          </div>
-          <p class="step-hint">Sign in with the username & password configured in Step 4 above.</p>
+          <p>FUSE • SFTP • WebDAV • NFS + Docker Filebrowser</p>
         </div>
       </div>
     </div>
   </section>
 
   <!-- Showcase Video -->
-  <section id="video" class="showcase-video">
+  <section class="showcase-video">
     <div class="container">
       <h2>See It in Action</h2>
       <p class="section-subtitle">Watch how MultiDisk FileBalancer unifies your storage effortlessly.</p>
@@ -306,7 +74,21 @@
     </div>
   </section>
 
+  <!-- Quick Start -->
+  <section class="quickstart">
+    <div class="container">
+      <h2>Get Started in Minutes</h2>
+      <div class="terminal">
+        <pre>git clone https://github.com/VulcanoSoftware/MultiDiskFileBalancer.git
+cd MultiDiskFileBalancer/MultiDisk-FileBalancer
+pip install -r requirements.txt --break-system-packages
+sudo python multidisk_filebalancer.py</pre>
+      </div>
+    </div>
+  </section>
+
   <footer>
+    <p>Made with ❤️ for my final school project — 2026</p>
     <p>MultiDisk FileBalancer by VulcanoSoftware</p>
   </footer>
 

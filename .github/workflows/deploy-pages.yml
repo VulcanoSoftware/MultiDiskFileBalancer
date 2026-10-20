@@ -1,4 +1,4 @@
-name: Deploy Showcase & Config Generator to GitHub Pages
+name: Deploy Config Generator Website to GitHub Pages
 
 on:
   push:
@@ -31,7 +31,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: showcase_website/
+          path: config_generator_website/
 
       - name: Deploy to GitHub Pages
         id: deployment
