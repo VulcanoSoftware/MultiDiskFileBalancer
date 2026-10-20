@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>MultiDisk FileBalancer - Login</title>
+    <link href="/webpanel.css" rel="stylesheet">
+    <style>
+      body {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        margin: 0;
+      }
+      .login-card {
+        width: 100%;
+        max-width: 380px;
+        padding: 28px;
+        border: 1px solid rgba(255, 255, 255, 0.12);
+        background: rgba(255, 255, 255, 0.03);
+        border-radius: 16px;
+        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+      }
+      .login-header {
+        text-align: center;
+        margin-bottom: 24px;
+      }
+      .login-header img {
+        width: 64px;
+        height: 64px;
+        margin-bottom: 12px;
+      }
+      .login-title {
+        font-size: 20px;
+        font-weight: 700;
+        letter-spacing: 0.2px;
+      }
+      .login-sub {
+        margin-top: 6px;
+        font-size: 13px;
+        color: rgba(230, 232, 239, 0.65);
+      }
+      .login-form {
+        display: grid;
+        gap: 16px;
+      }
+      .login-error {
+        margin-top: 12px;
+        font-size: 13px;
+        color: rgba(255, 112, 112, 0.9);
+        display: none;
+        text-align: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="login-card">
+      <div class="login-header">
+        <img src="/logo.png" alt="MultiDisk FileBalancer" onerror="this.style.display='none'">
+        <div class="login-title">MultiDisk FileBalancer</div>
+        <div class="login-sub">Sign in to access web panel</div>
+      </div>
+      <form class="login-form" id="loginForm" method="POST" action="/login">
+        <div class="field">
+          <label for="username">Username</label>
+          <input id="username" name="username" type="text" placeholder="admin" required autofocus autocomplete="username">
+        </div>
+        <div class="field">
+          <label for="password">Password</label>
+          <input id="password" name="password" type="password" placeholder="Password" required autocomplete="current-password">
+        </div>
+        <button class="btn" type="submit" style="width: 100%; margin-top: 8px;">Log In</button>
+        <div class="login-error" id="loginError">Invalid username or password.</div>
+      </form>
+    </div>
+
+    <script>
+      document.getElementById('loginForm').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const username = document.getElementById('username').value.trim();
+        const password = document.getElementById('password').value.trim();
+        const errorEl = document.getElementById('loginError');
+        errorEl.style.display = 'none';
+
+        try {
+          const res = await fetch('/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+          });
+          const data = await res.json().catch(() => ({}));
+          if (res.ok && data.success) {
+            window.location.href = data.redirect || '/panel';
+          } else {
+            errorEl.textContent = data.error || 'Invalid username or password.';
+            errorEl.style.display = 'block';
+          }
+        } catch (err) {
+          errorEl.textContent = 'Network error or server unreachable.';
+          errorEl.style.display = 'block';
+        }
+      });
+    </script>
+  </body>
+</html>

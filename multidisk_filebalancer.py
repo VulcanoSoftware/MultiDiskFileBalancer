@@ -17,7 +17,7 @@ import subprocess
 import logging
 import platform
 from asyncssh.sftp import SFTPName, SFTPAttrs, FXF_READ, FXF_WRITE, FXF_APPEND, FXF_CREAT, FXF_TRUNC
-from flask import Flask, jsonify, request, send_from_directory
+from flask import Flask, jsonify, request, send_from_directory, session, redirect
 
 logger = logging.getLogger("multidisk_filebalancer.vfs")
 
@@ -2289,6 +2289,8 @@ def save_config_if_missing(config_data, config_path=config_path):
     webpanel_enabled = _coerce_bool(webpanel_config.get('enabled', True), True)
     webpanel_host = str(webpanel_config.get('host', '0.0.0.0'))
     webpanel_port = _coerce_int(webpanel_config.get('port', 5000), default=5000, min_value=1, max_value=65535)
+    webpanel_username = str(webpanel_config.get('username') or 'admin').strip() or 'admin'
+    webpanel_password = str(webpanel_config.get('password') or 'changeme').strip() or 'changeme'
 
     filebrowser_enabled = _coerce_bool(filebrowser_config.get('enabled', True), True)
     filebrowser_port = _coerce_int(filebrowser_config.get('port', 8082), default=8082, min_value=1, max_value=65535)
@@ -2430,6 +2432,8 @@ def save_config_if_missing(config_data, config_path=config_path):
     lines.append(f"  enabled: {_bool_to_yaml(webpanel_enabled)}")
     lines.append(f"  host: {webpanel_host}")
     lines.append(f"  port: {webpanel_port}")
+    lines.append(f"  username: '{webpanel_username}'")
+    lines.append(f"  password: '{webpanel_password}'")
 
     with open(config_path, 'w', encoding='utf-8') as config_file:
         config_file.write("\n".join(lines) + "\n")
@@ -2587,6 +2591,8 @@ def _normalize_config_for_runtime(cfg):
         'enabled': _coerce_bool(webpanel.get('enabled', True), True),
         'host': str(webpanel.get('host', '127.0.0.1')),
         'port': _coerce_int(webpanel.get('port', 5000), default=5000, min_value=1, max_value=65535),
+        'username': str(webpanel.get('username') or 'admin').strip() or 'admin',
+        'password': str(webpanel.get('password') or 'changeme').strip() or 'changeme',
     }
 
     filebrowser = out.get('filebrowser')
@@ -2849,6 +2855,32 @@ def _build_insights(cfg, disks_usage, snapshot):
 
 def _create_webpanel_app():
     app = Flask(__name__)
+    app.secret_key = os.urandom(24)
+    app.config['PERMANENT_SESSION_LIFETIME'] = timedelta(minutes=30)
+
+    @app.before_request
+    def check_auth():
+        public_endpoints = {'login_page', 'logout_page', 'webpanel_css', 'webpanel_js', 'logo_png'}
+        if request.endpoint in public_endpoints or request.path in ('/login', '/logout', '/webpanel.css', '/webpanel.js', '/logo.png'):
+            return None
+
+        if not session.get('authenticated'):
+            if request.path.startswith('/api/'):
+                return jsonify({"error": "Unauthorized"}), 401
+            return redirect('/login')
+
+        now = time.time()
+        login_time = session.get('login_time', 0)
+        last_activity = session.get('last_activity', 0)
+        session_timeout = 1800  # 30 minutes in seconds
+
+        if (now - login_time > session_timeout) or (now - last_activity > session_timeout):
+            session.clear()
+            if request.path.startswith('/api/'):
+                return jsonify({"error": "Session expired"}), 401
+            return redirect('/login')
+
+        session['last_activity'] = now
 
     @app.get("/")
     def webpanel_root():
@@ -2865,6 +2897,52 @@ def _create_webpanel_app():
     @app.get("/webpanel.js")
     def webpanel_js():
         return send_from_directory(current_dir, "webpanel.js")
+
+    @app.get("/logo.png")
+    def logo_png():
+        return send_from_directory(current_dir, "logo.png")
+
+    @app.route("/login", methods=["GET", "POST"])
+    def login_page():
+        if request.method == "POST":
+            data = request.get_json(silent=True) or request.form
+            username = (data.get("username") or "").strip()
+            password = (data.get("password") or "").strip()
+
+            cfg = _normalize_config_for_runtime(_load_config_from_disk())
+            wp_cfg = cfg.get("webpanel", {})
+            expected_user = str(wp_cfg.get("username") or "admin").strip() or "admin"
+            expected_pass = str(wp_cfg.get("password") or "changeme").strip() or "changeme"
+
+            if username == expected_user and password == expected_pass:
+                session.clear()
+                session['authenticated'] = True
+                session['user'] = expected_user
+                session['login_time'] = time.time()
+                session['last_activity'] = time.time()
+                session.permanent = True
+                if request.is_json:
+                    return jsonify({"success": True, "redirect": "/panel"})
+                return redirect("/panel")
+            else:
+                if request.is_json:
+                    return jsonify({"error": "Invalid username or password"}), 401
+                if os.path.exists(os.path.join(current_dir, "login.html")):
+                    return send_from_directory(current_dir, "login.html"), 401
+                return "Invalid username or password", 401
+
+        if session.get("authenticated"):
+            return redirect("/panel")
+        if os.path.exists(os.path.join(current_dir, "login.html")):
+            return send_from_directory(current_dir, "login.html")
+        return "Login required", 200
+
+    @app.route("/logout", methods=["GET", "POST"])
+    def logout_page():
+        session.clear()
+        if request.is_json:
+            return jsonify({"success": True})
+        return redirect("/login")
 
     @app.get("/api/config")
     def api_get_config():
@@ -4291,6 +4369,8 @@ def main():
             webpanel_cfg = {}
         default_webpanel_host = str(webpanel_cfg.get('host', '0.0.0.0'))
         default_webpanel_port = _coerce_int(webpanel_cfg.get('port', 5000), default=5000, min_value=1, max_value=65535)
+        default_webpanel_username = str(webpanel_cfg.get('username') or 'admin').strip() or 'admin'
+        default_webpanel_password = str(webpanel_cfg.get('password') or 'changeme').strip() or 'changeme'
         host_input = input(f"Webserver host (default {default_webpanel_host}): ").strip()
         port_input = input(f"Webserver port (default {default_webpanel_port}): ").strip()
         selected_host = host_input or default_webpanel_host
@@ -4299,6 +4379,8 @@ def main():
             'enabled': True,
             'host': selected_host,
             'port': selected_port,
+            'username': default_webpanel_username,
+            'password': default_webpanel_password,
         }
 
     disks = config.get('disks', [])
@@ -4595,6 +4677,8 @@ def main():
             'enabled': _coerce_bool(webpanel_cfg_from_runtime.get('enabled', True), True),
             'host': str(webpanel_cfg_from_runtime.get('host', '0.0.0.0')),
             'port': _coerce_int(webpanel_cfg_from_runtime.get('port', 5000), default=5000, min_value=1, max_value=65535),
+            'username': str(webpanel_cfg_from_runtime.get('username') or 'admin').strip() or 'admin',
+            'password': str(webpanel_cfg_from_runtime.get('password') or 'changeme').strip() or 'changeme',
         }
 
         new_config = {
