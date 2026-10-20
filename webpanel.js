@@ -501,6 +501,10 @@ async function fetchJson(url, opts) {
   const res = await fetch(url, opts);
   const ct = res.headers.get("content-type") || "";
   if (!res.ok) {
+    if (res.status === 401) {
+      window.location.href = "/login";
+      throw new Error("Unauthorized");
+    }
     let detail = "";
     if (ct.includes("application/json")) {
       const j = await res.json().catch(() => null);
@@ -812,6 +816,8 @@ function fillConfigForm(cfg, meta) {
   setIfPresent("cfg-webpanel-enabled", Boolean(webpanel.enabled ?? true));
   setIfPresent("cfg-webpanel-host", webpanel.host ?? "127.0.0.1");
   setIfPresent("cfg-webpanel-port", webpanel.port ?? 5000);
+  setIfPresent("cfg-webpanel-username", webpanel.username ?? "admin");
+  setIfPresent("cfg-webpanel-password", webpanel.password ?? "changeme");
 
   if (meta?.config_path) $("configPathText").textContent = `Config: ${meta.config_path}`;
 }
@@ -889,6 +895,8 @@ function collectConfigFromForm() {
   base.webpanel.enabled = readBoolSelect("cfg-webpanel-enabled", true);
   base.webpanel.host = readText("cfg-webpanel-host", "127.0.0.1");
   base.webpanel.port = readNumber("cfg-webpanel-port", 5000);
+  base.webpanel.username = readText("cfg-webpanel-username", "admin");
+  base.webpanel.password = readText("cfg-webpanel-password", "changeme");
 
   return base;
 }
@@ -988,6 +996,15 @@ function configInit() {
 async function boot() {
   navInit();
   configInit();
+  const logoutBtn = $("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", async () => {
+      try {
+        await fetch("/logout", { method: "POST" });
+      } catch (e) {}
+      window.location.href = "/login";
+    });
+  }
   $("refreshNow").addEventListener("click", loadStatsOnce);
   await loadConfig();
   await loadStatsOnce();

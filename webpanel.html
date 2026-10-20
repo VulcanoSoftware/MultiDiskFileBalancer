@@ -21,6 +21,7 @@
         <div class="sidebar-footer">
           <div class="muted" id="uptimeText">Uptime: —</div>
           <div class="muted" id="configPathText">Config: —</div>
+          <button class="btn secondary" id="logoutBtn" type="button" style="width: 100%; margin-top: 10px;">Log Out</button>
         </div>
       </aside>
 
@@ -349,6 +350,14 @@
                 <div class="field">
                   <label>Port</label>
                   <input id="cfg-webpanel-port" type="number" min="1" max="65535" step="1">
+                </div>
+                <div class="field">
+                  <label>Username</label>
+                  <input id="cfg-webpanel-username" type="text" placeholder="admin">
+                </div>
+                <div class="field">
+                  <label>Password</label>
+                  <input id="cfg-webpanel-password" type="password" placeholder="changeme">
                 </div>
               </div>
             </div>
